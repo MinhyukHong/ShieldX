@@ -1,0 +1,7 @@
+{
+    "name": "com.example.monitor",
+    "description": "파일 실행 감지 및 악성코드 탐지",
+    "path": "${PROJECT_ROOT}/chrome_extension/monitor.py",
+    "type": "stdio",
+    "allowed_origins": ["chrome-extension://${EXTENSION_ID}/"]
+  }

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>악성코드 스캐너</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        width: 400px;
+        padding: 10px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+      }
+      .status-safe {
+        color: green;
+        font-weight: bold;
+      }
+      .status-danger {
+        color: red;
+        font-weight: bold;
+      }
+      .info-section {
+        margin-bottom: 15px;
+      }
+      .info-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+      }
+      .info-row {
+        display: flex;
+        margin-bottom: 4px;
+      }
+      .info-label {
+        flex: 0 0 120px;
+        font-weight: bold;
+      }
+      .info-value {
+        flex: 1;
+        word-break: break-all;
+      }
+      .scan-btn {
+        background: #0078d7;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      #report-container {
+        display: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+    </style>
+    <script src="popup.js" defer></script>
+  </head>
+  <body>
+    <div class="header">
+      <h2>악성코드 스캐너</h2>
+      <button id="scan" class="scan-btn">최근 다운로드 스캔</button>
+    </div>
+    <div>
+      <p>상태: <span id="status">준비 완료</span></p>
+    </div>
+    
+    <div id="report-container">
+      <div class="info-section">
+        <div class="info-title">파일 정보</div>
+        <div class="info-row">
+          <div class="info-label">파일명</div>
+          <div id="filename" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">판정</div>
+          <div id="prediction" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">MD5 해시</div>
+          <div id="file-hash" class="info-value">-</div>
+        </div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-title">YARA 스캔 결과</div>
+        <div id="yara-results">일치하는 YARA 규칙 없음</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-title">위험 요소</div>
+        <div id="risk-factors">확인된 위험 요소 없음</div>
+      </div>
+    </div>
+  </body>
+</html>

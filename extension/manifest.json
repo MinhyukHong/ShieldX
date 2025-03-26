@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "AI-Powered Trojan Vaccine",
+  "version": "1.0",
+  "description": "파일 실행 시 AI 기반 악성코드 탐지",
+  "permissions": [
+    "downloads", 
+    "notifications", 
+    "nativeMessaging", 
+    "declarativeNetRequest"
+  ],
+  "host_permissions": ["http://localhost:5000/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentscript.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/vaccine.png",
+      "128": "icons/alert.png"
+    }
+  },
+  "icons": {
+    "48": "icons/vaccine.png",
+    "128": "icons/alert.png"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+}
