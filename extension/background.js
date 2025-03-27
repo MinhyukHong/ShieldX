@@ -8,24 +8,6 @@ let latestScanResult = {
   scan_status: "none" // none, scanning, complete, error
 };
 
-// 백그라운드에서 Python 스크립트 실행
-function startMonitorScript() {
-  chrome.runtime.sendNativeMessage(
-    "com.example.monitor",
-    { action: "start" },
-    function (response) {
-      if (chrome.runtime.lastError) {
-        console.error(
-          "❌ Native 메시지 전송 오류:",
-          chrome.runtime.lastError.message
-        );
-      } else {
-        console.log("✅ Python 스크립트 실행됨:", response);
-      }
-    }
-  );
-}
-
 // 다운로드한 파일 스캔 함수 - 수정
 function scanDownloadedFile(downloadItem) {
   console.log("📥 새 파일 다운로드 감지:", downloadItem.filename);
@@ -191,11 +173,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   sendResponse({ status: "unknown_action" });
   return true;
 });
-
-// 확장 프로그램이 설치되면 Python 모니터링 스크립트 실행
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("🚀 확장 프로그램이 설치됨");
-  startMonitorScript();
   
   // 기존 규칙 정리 후 새로운 규칙 추가
   chrome.declarativeNetRequest.getDynamicRules((existingRules) => {
@@ -217,7 +194,6 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   
   // 다운로드 이벤트 리스너 및 기타 코드는 그대로 유지
-});
 
 // 규칙 로드 및 적용 함수
 function loadAndApplyRules() {
