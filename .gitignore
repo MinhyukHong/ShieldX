@@ -1,0 +1,43 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+
+# Virtualenv
+venv/
+env/
+.venv/
+.env/
+ENV/
+
+# 크롬 익스텐션 관련 항목
+# 빌드 디렉토리
+dist/
+build/
+
+# 의존성 모듈
+node_modules/
+
+# 환경 설정 파일
+.env
+.env.local
+
+# 패키지 관리자 lock 파일
+yarn.lock
+package-lock.json
+
+# 임시 파일
+.tmp/
+.temp/
+
+# 개인 인증서 파일
+*.pem
+*.crx
+*.zip
+
+# IDE 관련 파일
+.idea/
+.vscode/
+.history/
+*.sublime-project
+*.sublime-workspace
