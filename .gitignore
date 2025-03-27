@@ -15,6 +15,9 @@ ENV/
 dist/
 build/
 
+# Chrome Extension metadata
+extension/_metadata
+
 # 의존성 모듈
 node_modules/
 
