@@ -61,7 +61,65 @@
         padding: 10px;
         margin-top: 10px;
       }
+      .risk-item {
+        margin-bottom: 10px;
+        border-left: 3px solid #ddd;
+        padding-left: 10px;
+      }
+      .risk-high {
+        border-left-color: #ff4444;
+      }
+      .risk-medium {
+        border-left-color: #ffaa33;
+      }
+      .risk-low {
+        border-left-color: #aaaaaa;
+      }
+      .risk-title {
+        font-weight: bold;
+        margin-bottom: 2px;
+      }
+      .risk-desc {
+        font-size: 13px;
+        margin-bottom: 2px;
+      }
+      .risk-recommendation {
+        font-size: 12px;
+        font-style: italic;
+        color: #555;
+      }
+      .chart-container {
+        margin-top: 10px;
+      }
+      
+      /* 탭 스타일 추가 */
+      .tab-container {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 15px;
+      }
+      .tab {
+        padding: 8px 15px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 3px 3px 0 0;
+        margin-right: 5px;
+      }
+      .tab.active {
+        background-color: #f5f5f5;
+        border-color: #ddd;
+        font-weight: bold;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
     </style>
+    <!-- Chart.js 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="popup.js" defer></script>
   </head>
   <body>
@@ -98,6 +156,59 @@
       <div class="info-section">
         <div class="info-title">위험 요소</div>
         <div id="risk-factors">확인된 위험 요소 없음</div>
+      </div>
+      
+      <!-- 기존 위험 요소 섹션 아래에 파일 중심 분석 정보 추가 -->
+      <div class="info-section">
+        <div class="info-title">파일 상세 정보</div>
+        <div class="info-row">
+          <div class="info-label">크기</div>
+          <div id="file-size" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">SHA256 해시</div>
+          <div id="file-sha256" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">엔트로피</div>
+          <div id="file-entropy" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">생성 시간</div>
+          <div id="file-created" class="info-value">-</div>
+        </div>
+      </div>
+
+      <!-- 엔트로피 시각화 차트 추가 -->
+      <div class="info-section" id="entropy-chart-section" style="display:none;">
+        <div class="info-title">바이트 분포 시각화</div>
+        <canvas id="entropy-chart" width="380" height="150"></canvas>
+        <div class="chart-legend" style="font-size: 12px; color: #666; margin-top: 5px; text-align: center;">
+          바이트 값 (0-255)에 대한 분포. 균일한 분포는 암호화 또는 압축을 나타낼 수 있습니다.
+        </div>
+      </div>
+
+      <!-- PE 파일 정보 섹션 (실행 파일인 경우에만 표시) -->
+      <div class="info-section" id="pe-info-section" style="display:none;">
+        <div class="info-title">PE 파일 정보</div>
+        <div class="info-row">
+          <div class="info-label">파일 유형</div>
+          <div id="pe-type" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">컴파일 시간</div>
+          <div id="pe-compile-time" class="info-value">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">섹션</div>
+          <div id="pe-sections" class="info-value">-</div>
+        </div>
+      </div>
+
+      <!-- 위험 요소 상세 설명 섹션 -->
+      <div class="info-section">
+        <div class="info-title">위험 요소 상세 분석</div>
+        <div id="risk-details">확인된 위험 요소 없음</div>
       </div>
     </div>
   </body>
