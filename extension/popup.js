@@ -170,66 +170,55 @@ function displayDetailedAnalysis(analysis) {
   }
 }
 
-// 바이트 분포 차트 표시 함수
+// 바이트 분포 차트 표시 함수 - Chart.js 없이 간단한 텍스트 요약으로 대체
 function displayByteDistributionChart(distribution) {
-  const ctx = document.getElementById('entropy-chart').getContext('2d');
+  // 엔트로피 차트 섹션 표시
+  document.getElementById('entropy-chart-section').style.display = 'block';
   
-  // 차트 데이터 준비
-  const labels = Array.from({length: 256}, (_, i) => i);
-  const data = {
-    labels: labels,
-    datasets: [{
-      label: '바이트 분포',
-      data: distribution,
-      backgroundColor: generateColorGradient(distribution.length),
-      borderWidth: 1
-    }]
-  };
+  // 차트 대신 텍스트 요약 표시
+  const chartElement = document.getElementById('entropy-chart');
   
-  // 차트 생성
-  new Chart(ctx, {
-    type: 'bar',
-    data: data,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: '빈도'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: '바이트 값'
-          },
-          ticks: {
-            autoSkip: true,
-            maxTicksLimit: 16
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          callbacks: {
-            title: function(tooltipItems) {
-              return `바이트 값: ${tooltipItems[0].label}`;
-            },
-            label: function(tooltipItem) {
-              const percent = (tooltipItem.raw * 100).toFixed(2);
-              return `빈도: ${percent}%`;
-            }
-          }
-        }
-      }
+  // 분포의 특징 계산
+  let maxByte = 0;
+  let maxFreq = 0;
+  let zeroBytes = 0;
+  let nonZeroBytes = 0;
+  
+  for (let i = 0; i < distribution.length; i++) {
+    if (distribution[i] > maxFreq) {
+      maxFreq = distribution[i];
+      maxByte = i;
     }
-  });
+    
+    if (distribution[i] === 0) {
+      zeroBytes++;
+    } else {
+      nonZeroBytes++;
+    }
+  }
+  
+  // 텍스트 요약 생성
+  const summary = document.createElement('div');
+  summary.innerHTML = `
+    <p>바이트 분포 요약:</p>
+    <ul>
+      <li>가장 빈번한 바이트: ${maxByte} (ASCII: ${getAsciiChar(maxByte)}) - ${(maxFreq * 100).toFixed(2)}%</li>
+      <li>사용된 바이트: ${nonZeroBytes}/256 (${(nonZeroBytes/2.56).toFixed(0)}%)</li>
+      <li>사용되지 않은 바이트: ${zeroBytes}/256 (${(zeroBytes/2.56).toFixed(0)}%)</li>
+    </ul>
+  `;
+  
+  // 차트 캔버스 대신 텍스트 요약으로 대체
+  chartElement.parentNode.replaceChild(summary, chartElement);
+}
+
+// ASCII 문자 변환 (출력 가능한 문자만)
+function getAsciiChar(byteValue) {
+  if (byteValue >= 32 && byteValue <= 126) {
+    return `'${String.fromCharCode(byteValue)}'`;
+  } else {
+    return '(제어 문자)';
+  }
 }
 
 // 위험 요소 표시 함수
@@ -306,14 +295,4 @@ function formatBytes(bytes, decimals = 2) {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
-// 색상 그라데이션 생성 함수
-function generateColorGradient(length) {
-  const colors = [];
-  for (let i = 0; i < length; i++) {
-    const hue = (i / length) * 240; // 0(빨강)에서 240(파랑)까지
-    colors.push(`hsla(${hue}, 100%, 50%, 0.7)`);
-  }
-  return colors;
 }
