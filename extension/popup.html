@@ -4,120 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>악성코드 스캐너</title>
-    <style>
-      body {
-        font-family: 'Segoe UI', Arial, sans-serif;
-        width: 400px;
-        padding: 10px;
-      }
-      .header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-      }
-      .status-safe {
-        color: green;
-        font-weight: bold;
-      }
-      .status-danger {
-        color: red;
-        font-weight: bold;
-      }
-      .info-section {
-        margin-bottom: 15px;
-      }
-      .info-title {
-        font-weight: bold;
-        margin-bottom: 5px;
-        color: #333;
-      }
-      .info-row {
-        display: flex;
-        margin-bottom: 4px;
-      }
-      .info-label {
-        flex: 0 0 120px;
-        font-weight: bold;
-      }
-      .info-value {
-        flex: 1;
-        word-break: break-all;
-      }
-      .scan-btn {
-        background: #0078d7;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 3px;
-        cursor: pointer;
-      }
-      #report-container {
-        display: none;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 10px;
-        margin-top: 10px;
-      }
-      .risk-item {
-        margin-bottom: 10px;
-        border-left: 3px solid #ddd;
-        padding-left: 10px;
-      }
-      .risk-high {
-        border-left-color: #ff4444;
-      }
-      .risk-medium {
-        border-left-color: #ffaa33;
-      }
-      .risk-low {
-        border-left-color: #aaaaaa;
-      }
-      .risk-title {
-        font-weight: bold;
-        margin-bottom: 2px;
-      }
-      .risk-desc {
-        font-size: 13px;
-        margin-bottom: 2px;
-      }
-      .risk-recommendation {
-        font-size: 12px;
-        font-style: italic;
-        color: #555;
-      }
-      .chart-container {
-        margin-top: 10px;
-      }
-      
-      /* 탭 스타일 추가 */
-      .tab-container {
-        display: flex;
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 15px;
-      }
-      .tab {
-        padding: 8px 15px;
-        cursor: pointer;
-        border: 1px solid transparent;
-        border-bottom: none;
-        border-radius: 3px 3px 0 0;
-        margin-right: 5px;
-      }
-      .tab.active {
-        background-color: #f5f5f5;
-        border-color: #ddd;
-        font-weight: bold;
-      }
-      .tab-content {
-        display: none;
-      }
-      .tab-content.active {
-        display: block;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css">
     <script src="popup.js" defer></script>
   </head>
   <body>
@@ -177,17 +64,8 @@
         </div>
       </div>
 
-      <!-- 엔트로피 시각화 차트 추가 -->
-      <div class="info-section" id="entropy-chart-section" style="display:none;">
-        <div class="info-title">바이트 분포 시각화</div>
-        <canvas id="entropy-chart" width="380" height="150"></canvas>
-        <div class="chart-legend" style="font-size: 12px; color: #666; margin-top: 5px; text-align: center;">
-          바이트 값 (0-255)에 대한 분포. 균일한 분포는 암호화 또는 압축을 나타낼 수 있습니다.
-        </div>
-      </div>
-
       <!-- PE 파일 정보 섹션 (실행 파일인 경우에만 표시) -->
-      <div class="info-section" id="pe-info-section" style="display:none;">
+      <div class="info-section" id="pe-info-section">
         <div class="info-title">PE 파일 정보</div>
         <div class="info-row">
           <div class="info-label">파일 유형</div>
