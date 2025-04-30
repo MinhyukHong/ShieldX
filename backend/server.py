@@ -3,6 +3,8 @@ from flask_cors import CORS
 import os
 import hashlib
 import tempfile
+# 추가된 import
+from file_analyzer import FileAnalyzer
 
 try:
     import yara
@@ -60,6 +62,9 @@ class YaraScanner:
         except Exception as e:
             print(f"파일 {file_path} 스캔 중 오류 발생: {str(e)}")
             return []
+
+# 파일 분석기 초기화
+file_analyzer = FileAnalyzer()
 
 # 간단한 악성코드 예측 함수 (실제 모델 없이)
 def predict_malware(file_path_or_content):
