@@ -3,7 +3,8 @@ from flask_cors import CORS
 import os
 import hashlib
 import tempfile
-# 추가된 import
+import json
+import datetime 
 from file_analyzer import FileAnalyzer
 
 try:
@@ -63,12 +64,79 @@ class YaraScanner:
             print(f"파일 {file_path} 스캔 중 오류 발생: {str(e)}")
             return []
 
+# 시스템 파일 필터링 함수 추가
+def is_system_file(filename):
+    """시스템 파일인지 확인"""
+    system_files = ['.DS_Store', 'Thumbs.db', 'desktop.ini', '.localized']
+    return filename in system_files or filename.startswith('.')
+
+# 분석 결과 요약 함수 추가
+def summarize_analysis(analysis):
+    """분석 결과에서 중요 정보만 추출"""
+    if not analysis:
+        return {}
+    
+    # 중요 정보만 추출
+    summary = {
+        "file_info": {
+            "filename": analysis.get("filename"),
+            "size": analysis.get("size_human"),
+            "modified_time": analysis.get("modified_time"),
+            "file_type": analysis.get("file_type", "UNKNOWN"),
+        },
+        "security_info": {
+            "md5": analysis.get("md5"),
+            "sha1": analysis.get("sha1"),
+            "sha256": analysis.get("sha256"),
+            "entropy_score": round(analysis.get("entropy_normalized", 0) * 10, 1),
+        }
+    }
+    
+    # 위험 요소가 있는 경우만 포함
+    risk_factors = analysis.get("risk_factors", [])
+    if risk_factors:
+        summary["security_info"]["risk_factors"] = risk_factors
+    
+    return summary
+
+# API 응답 구성 함수 추가
+def prepare_scan_response(filename, file_hash, prediction, yara_results, detailed_analysis):
+    """스캔 응답 데이터 구성"""
+    # 분석 결과 요약
+    summary = summarize_analysis(detailed_analysis)
+    
+    # 기본 응답 구성
+    response = {
+        "scan_result": {
+            "filename": filename,
+            "prediction": prediction,
+            "scan_time": datetime.datetime.now().isoformat(),
+        },
+        "file_details": summary.get("file_info", {}),
+        "security_details": summary.get("security_info", {})
+    }
+    
+    # YARA 결과가 있으면 추가
+    if yara_results:
+        response["yara_matches"] = [
+            {"rule": match.get("rule"), "description": match.get("meta", {}).get("description", "N/A")}
+            for match in yara_results
+        ]
+    
+    return response
+
 # 파일 분석기 초기화
 file_analyzer = FileAnalyzer()
 
 # 간단한 악성코드 예측 함수 (실제 모델 없이)
 def predict_malware(file_path_or_content):
     return "benign"  # 기본값으로 안전하다고 판단
+
+# JSON 직렬화를 위한 기본 함수 추가
+def json_default(obj):
+    if isinstance(obj, (datetime.date, datetime.datetime)):
+        return obj.isoformat()
+    return str(obj)
 
 # 현재 디렉토리 기준 상대 경로
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -82,59 +150,82 @@ CORS(app)  # 크로스 오리진 요청 허용
 
 @app.route("/scan", methods=["POST"])
 def scan_file():
-    # JSON 요청 처리 부분 개선
+    # 모든 응답을 위한 기본 오류 응답 형식
+    error_response = {
+        "scan_result": {
+            "prediction": "error",
+            "scan_time": datetime.datetime.now().isoformat(),
+        },
+        "message": "파일이 없거나 스캔 요청이 잘못되었습니다"
+    }
+    
+    # JSON 요청 처리 부분
     if request.json:
         action = request.json.get('action')
         
         if action == 'scan_recent_downloads':
-            # 기존 코드 유지
+            # 다운로드 폴더에서 시스템 파일 제외한 최근 파일 찾기
             download_dir = os.path.expanduser("~/Downloads")
             files = sorted(
-                [os.path.join(download_dir, f) for f in os.listdir(download_dir) if os.path.isfile(os.path.join(download_dir, f))],
+                [os.path.join(download_dir, f) for f in os.listdir(download_dir) 
+                 if os.path.isfile(os.path.join(download_dir, f)) and not is_system_file(f)],
                 key=os.path.getmtime,
                 reverse=True
             )
             
-            if files:
-                recent_file = files[0]
-                filename = os.path.basename(recent_file)
-                file_hash = hashlib.md5(open(recent_file, 'rb').read()).hexdigest()
-                
-                # YARA 스캔 수행
-                yara_results = []
-                prediction = "benign"
-                
-                if YARA_AVAILABLE and yara_scanner:
-                    yara_matches = yara_scanner.scan_file(recent_file)
-                    if yara_matches:
-                        prediction = "malicious"
-                        yara_results = [{"rule": match.rule, "meta": getattr(match, 'meta', {})} for match in yara_matches]
-                
-                return jsonify({
-                    "filename": filename,
-                    "file_hash": file_hash,
-                    "prediction": prediction,
-                    "yara_results": yara_results
-                })
+            if not files:
+                return json.dumps({
+                    "scan_result": {
+                        "prediction": "benign",
+                        "scan_time": datetime.datetime.now().isoformat(),
+                    },
+                    "message": "최근 다운로드 파일 없음"
+                }, default=json_default, indent=2), 200, {'Content-Type': 'application/json'}
             
-            return jsonify({"prediction": "benign", "message": "최근 다운로드 파일 없음"})
+            recent_file = files[0]
+            filename = os.path.basename(recent_file)
+            file_hash = hashlib.md5(open(recent_file, 'rb').read()).hexdigest()
+            
+            # YARA 스캔 수행
+            yara_results = []
+            prediction = "benign"
+            
+            if YARA_AVAILABLE and yara_scanner:
+                yara_matches = yara_scanner.scan_file(recent_file)
+                if yara_matches:
+                    prediction = "malicious"
+                    yara_results = [{"rule": match.rule, "meta": getattr(match, 'meta', {})} for match in yara_matches]
+            
+            # 상세 분석 수행
+            detailed_analysis = file_analyzer.analyze_file(recent_file)
+            
+            # 응답 데이터 구성
+            response_data = prepare_scan_response(
+                filename, file_hash, prediction, yara_results, detailed_analysis
+            )
+            
+            return json.dumps(response_data, default=json_default, indent=2), 200, {'Content-Type': 'application/json'}
         
         elif action == 'scan_file':
             # 파일 경로로 스캔 요청을 받았을 때
             filepath = request.json.get('filepath')
             if not filepath:
-                return jsonify({"error": "파일 경로가 제공되지 않았습니다."}), 400
-                
+                error_response["message"] = "파일 경로가 제공되지 않았습니다."
+                return json.dumps(error_response, default=json_default, indent=2), 400, {'Content-Type': 'application/json'}
+            
             # 가능하면 전체 경로 구성
             if not os.path.isabs(filepath):
                 filepath = os.path.join(os.path.expanduser("~/Downloads"), os.path.basename(filepath))
-                
+            
             if not os.path.exists(filepath):
-                return jsonify({
-                    "prediction": "benign",
+                return json.dumps({
+                    "scan_result": {
+                        "prediction": "benign", 
+                        "scan_time": datetime.datetime.now().isoformat(),
+                    },
                     "message": f"파일을 찾을 수 없음: {filepath}"
-                })
-                
+                }, default=json_default, indent=2), 404, {'Content-Type': 'application/json'}
+            
             filename = os.path.basename(filepath)
             file_hash = hashlib.md5(open(filepath, 'rb').read()).hexdigest()
             
@@ -148,17 +239,17 @@ def scan_file():
                     prediction = "malicious"
                     yara_results = [{"rule": match.rule, "meta": getattr(match, 'meta', {})} for match in yara_matches]
             
-            return jsonify({
-                "filename": filename,
-                "file_hash": file_hash,
-                "prediction": prediction,
-                "yara_results": yara_results
-            })
+            # FileAnalyzer를 사용한 상세 분석 추가
+            detailed_analysis = file_analyzer.analyze_file(filepath)
             
-    # 기존 코드 (파일 업로드 처리)...
-    if "file" not in request.files and not request.json:
-        return jsonify({"error": "파일이 없거나 스캔 요청이 잘못되었습니다"}), 400
-
+            # 응답 데이터 구성
+            response_data = prepare_scan_response(
+                filename, file_hash, prediction, yara_results, detailed_analysis
+            )
+            
+            return json.dumps(response_data, default=json_default, indent=2), 200, {'Content-Type': 'application/json'}
+    
+    # 파일 업로드 처리 부분
     if "file" in request.files:
         uploaded_file = request.files["file"]
         os.makedirs("uploads", exist_ok=True)
@@ -185,47 +276,18 @@ def scan_file():
             # YARA가 없으면 기본 함수로만 예측
             prediction = predict_malware(file_path)
         
-        return jsonify({
-            "filename": uploaded_file.filename,
-            "file_hash": file_hash,
-            "prediction": prediction,
-            "yara_results": yara_results
-        })
-    elif request.json and request.json.get('action') == 'scan_recent_downloads':
-        # 다운로드 폴더에서 가장 최근 파일 찾기
-        download_dir = os.path.expanduser("~/Downloads")
-        files = sorted(
-            [os.path.join(download_dir, f) for f in os.listdir(download_dir) if os.path.isfile(os.path.join(download_dir, f))],
-            key=os.path.getmtime,
-            reverse=True
+        # 상세 분석 추가
+        detailed_analysis = file_analyzer.analyze_file(file_path)
+        
+        # 응답 데이터 구성
+        response_data = prepare_scan_response(
+            uploaded_file.filename, file_hash, prediction, yara_results, detailed_analysis
         )
         
-        if files:
-            recent_file = files[0]
-            filename = os.path.basename(recent_file)
-            file_hash = hashlib.md5(open(recent_file, 'rb').read()).hexdigest()
-            
-            # YARA 스캔 수행
-            yara_results = []
-            prediction = "benign"
-            
-            if YARA_AVAILABLE and yara_scanner:
-                yara_matches = yara_scanner.scan_file(recent_file)
-                if yara_matches:
-                    prediction = "malicious"
-                    yara_results = [{"rule": match.rule, "meta": getattr(match, 'meta', {})} for match in yara_matches]
-            
-            return jsonify({
-                "filename": filename,
-                "file_hash": file_hash,
-                "prediction": prediction,
-                "yara_results": yara_results
-            })
-        
-        return jsonify({"prediction": "benign", "message": "최근 다운로드 파일 없음"})
-    else:
-        # 스캔 요청만 받은 경우 (파일 없음)
-        return jsonify({"prediction": "benign", "message": "최근 다운로드 파일 없음"})
+        return json.dumps(response_data, default=json_default, indent=2), 200, {'Content-Type': 'application/json'}
+    
+    # 유효한 요청이 없는 경우
+    return json.dumps(error_response, default=json_default, indent=2), 400, {'Content-Type': 'application/json'}
 
 @app.route("/scan_script", methods=["POST"])
 def scan_script():
