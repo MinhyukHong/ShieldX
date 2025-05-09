@@ -45,3 +45,8 @@ package-lock.json
 .history/
 *.sublime-project
 *.sublime-workspace
+
+# 분석 결과 및 업로드 파일 제외
+backend/results/
+backend/uploads/
+uploads/
